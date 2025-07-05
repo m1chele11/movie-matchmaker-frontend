@@ -3,20 +3,52 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import MovieSpinner from "@/assets/lotties/movieSpinner.json";
+import { useEffect } from "react";
+
+
+
+const Player = dynamic(
+  () => import("@lottiefiles/react-lottie-player").then((mod) => mod.Player),
+  { ssr: false }
+);
 
 export default function LoginPage() {
 
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
 
     const [errorMsg, setErrorMsg] = useState("");
+
+    const [isHydrated, setIsHydrated] = useState(false);
+
+    useEffect(() => {
+      setIsHydrated(true);
+    }, []);
+
+    if (!isHydrated) {
+      return (
+        <div style={{ display: "flex", justifyContent: "center", marginTop: "5rem" }}>
+          <Player
+            autoplay
+            loop
+            src={MovieSpinner}
+            style={{ height: "80px", width: "80px" }}
+          />
+        </div>
+      );
+    }
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 
       e.preventDefault();
 
       setErrorMsg("");//reset error message
+
+      setIsLoading(true);
 
       try {
         const response = await fetch("http://localhost:8080/login", {
@@ -29,16 +61,21 @@ export default function LoginPage() {
 
         if (!response.ok) {
           setErrorMsg("Invalid username or password");
+          setIsLoading(false);
           return;
         }
         const token = await response.text();
         localStorage.setItem("token", token);
+        setIsLoading(false);
+
 
         //redirect to home page or dashboard
         router.push("/");
       } catch (error) {
         console.error("Login failed:", error);
         setErrorMsg("An error occurred. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
     }
 
@@ -136,7 +173,18 @@ export default function LoginPage() {
             required
           />
 
-          <button type="submit">Login</button>
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? (
+              <Player
+                autoplay
+                loop
+                src={MovieSpinner}
+                style={{ height: "40px", width: "40px", margin: "0 auto" }}
+              />
+            ) : (
+              "Sign In"
+            )}
+          </button>
         </form>
 
         <div className="link">

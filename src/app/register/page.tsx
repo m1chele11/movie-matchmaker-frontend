@@ -3,18 +3,57 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import MovieSpinner from "@/assets/lotties/movieSpinner.json";
+import { useEffect } from "react";
 
+const Player = dynamic(
+  () => import("@lottiefiles/react-lottie-player").then((mod) => mod.Player),
+  { ssr: false }
+);
 
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  if (!isHydrated) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", marginTop: "5rem" }}>
+        <Player
+          autoplay
+          loop
+          src={MovieSpinner}
+          style={{ height: "80px", width: "80px" }}
+        />
+      </div>
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
+    //input validation
+    if (username.length < 3) {
+      setErrorMsg("Username must be at least 3 characters long");
+      return;
+    }
+    if (password.length < 6) {
+      setErrorMsg("Password must be at least 6 characters long");
+      return;
+    }
+
+
+    setIsLoading(true);
 
     try{
       const response = await fetch("http://localhost:8080/register", {
@@ -27,6 +66,7 @@ export default function RegisterPage() {
 
       if (!response.ok) {
         setErrorMsg("Username already exists");
+        setIsLoading(false);
         return;
       }
 
@@ -34,6 +74,8 @@ export default function RegisterPage() {
     } catch (error) {
       console.error("Registration failed:", error);
       setErrorMsg("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
 
     setErrorMsg("");//reset error message
@@ -138,7 +180,18 @@ export default function RegisterPage() {
             required
           />
 
-          <button type="submit">Register</button>
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? (
+              <Player
+                autoplay
+                loop
+                src={MovieSpinner}
+                style={{ height: "40px", width: "40px", margin: "0 auto" }}
+              />
+            ) : (
+              "Register"
+            )}
+          </button>
         </form>
 
         {errorMsg && <div className="error">{errorMsg}</div>}
