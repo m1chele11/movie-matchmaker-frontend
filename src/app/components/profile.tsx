@@ -5,14 +5,18 @@ import Image from "next/image";
 
 interface UserProfilePanelProps {
   username: string;
+  email?: string;
   avatarUrl?: string;
   onLogout: () => void;
+  onClose: () => void;
 }
 
 export default function UserProfilePanel({
   username,
+  email,
   avatarUrl,
   onLogout,
+  onClose,
 }: UserProfilePanelProps) {
   return (
     <>
@@ -35,6 +39,14 @@ export default function UserProfilePanel({
           gap: 1rem;
           z-index: 1000;
         }
+
+        .email {
+          font-size: 0.9rem;
+          color: #ccc;
+          text-align: center;
+          word-break: break-word;
+        }
+
 
         .avatar {
           width: 80px;
@@ -68,9 +80,27 @@ export default function UserProfilePanel({
         .logout-btn:hover {
           background-color: #b20710;
         }
+
+        .close-btn {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background: transparent;
+          border: none;
+          font-size: 1.5rem;
+          color: #ccc;
+          cursor: pointer;
+          transition: color 0.2s ease;
+        }
+
+        .close-btn:hover {
+          color: #fff;
+        }
+
       `}</style>
 
       <aside className="profile-panel" aria-label="User Profile Panel">
+      <button className="close-btn" onClick={onClose} aria-label="Close profile panel">×</button>
         {avatarUrl ? (
           <Image
             src={avatarUrl}
@@ -79,10 +109,14 @@ export default function UserProfilePanel({
             width={80}
             height={80}
           />
+          
         ) : (
-          <div className="avatar" />
+          <div className="avatar" style={{ display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", color: "#fff", fontSize: "1.5rem" }}>
+                {username[0]?.toUpperCase()}
+        </div>
         )}
         <div className="username">{username}</div>
+        {email && <div className="email">{email}</div>}
         <button className="logout-btn" onClick={onLogout} type="button">
           Log Out
         </button>
