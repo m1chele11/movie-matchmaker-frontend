@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useEffect } from "react";
+import UserProfilePanel from "../components/profile";
+import { useRouter } from "next/navigation";
 
 
 const genres = [
@@ -25,6 +27,9 @@ const streamingServices = [
 ];
 
 export default function Dashboard() {
+
+  const router = useRouter();
+
   const [genreRanks, setGenreRanks] = useState<Record<string, number>>(() =>
     genres.reduce((acc, genre) => {
       acc[genre] = 3;
@@ -32,16 +37,43 @@ export default function Dashboard() {
     }, {} as Record<string, number>)
   );
 
+  const [genreRanks2, setGenreRanks2] = useState<Record<string, number>>(() =>
+    genres.reduce((acc, genre) => {
+      acc[genre] = 3;
+      return acc;
+    }, {} as Record<string, number>)
+  );
+
+  const [showSecondUser, setShowSecondUser] = useState(false);
+  
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
 
   const [isHydrated, setIsHydrated] = useState(false);
 
-  useEffect(() => {
-    setIsHydrated(true);
-  }, []);
+  const [showProfile, setShowProfile] = useState(false);
 
-  function handleRankChange(genre: string, value: number) {
-    setGenreRanks((prev) => ({ ...prev, [genre]: value }));
+
+  useEffect(() => {
+    //TODO: remove this for production
+    const token = localStorage.getItem("token");
+    console.log("Token on dashboard load:", token);
+    if (!token) {
+      router.push("/login");
+    } else {
+      setIsHydrated(true);
+    }
+  }, [router]);
+
+  function handleRankChange(
+    genre: string,
+    value: number,
+    user: 1 | 2 = 1
+  ){
+    if (user === 1) {
+      setGenreRanks((prev) => ({ ...prev, [genre]: value }));
+    } else {
+      setGenreRanks2((prev) => ({ ...prev, [genre]: value }));
+    }
   }
 
   function toggleService(service: string) {
@@ -50,14 +82,44 @@ export default function Dashboard() {
     );
   }
 
-  function handleSave() {
-    console.log("Genre Ranks:", genreRanks);
-    console.log("Selected Services:", selectedServices);
-    alert("Preferences saved (mock)!");
+  async function handleSave() {
+    const payload = {
+      user1Genres: genreRanks,
+      user2Genres: genreRanks2,
+      services: selectedServices,
+    };
+  
+    try {
+      const response = await fetch("/api/preferences", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      alert("Preferences saved successfully!");
+      console.log("Response from server:", data);
+    } catch (error) {
+      console.error("Error saving preferences:", error);
+      alert("Failed to save preferences (mock)!");
+    }
   }
 
   if (!isHydrated) {
     return null;
+  }
+
+  function handleLogout() {
+    //TODO: Implement logout logic here: clear tokens, redirect, etc.
+    localStorage.removeItem("token");
+    router.push("/login");
+    alert("Logged out!");
   }
 
   return (
@@ -151,7 +213,71 @@ export default function Dashboard() {
         .save-btn:hover {
           background-color: #e6b007;
         }
+        .hamburger-btn {
+          position: fixed;
+          top: 1.5rem;
+          right: 1.5rem;
+          background: rgba(255, 255, 255, 0.08);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 12px;
+          padding: 0.6rem;
+          z-index: 1000;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: flex;
+          flex-direction: column;
+          gap: 0.35rem;
+        }
+
+        .hamburger-btn:hover {
+          box-shadow: 0 0 8px 2px rgba(255, 193, 7, 0.6);
+        }
+
+        .bar {
+          width: 24px;
+          height: 3px;
+          background-color: #ffc107;
+          border-radius: 3px;
+        }
+        .profile-panel-wrapper {
+          position: fixed;
+          top: 0;
+          right: 0;
+          height: 100vh;
+          width: 280px;
+          background: rgba(18, 18, 18, 0.95);
+          backdrop-filter: blur(12px);
+          border-left: 1px solid rgba(255, 255, 255, 0.1);
+          padding: 1.5rem;
+          box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
+          z-index: 999;
+          animation: slideIn 0.3s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+
+
       `}</style>
+
+      <button
+        className="hamburger-btn"
+        onClick={() => setShowProfile(!showProfile)}
+        aria-label="Toggle profile panel"
+      >
+        <div className="bar"></div>
+        <div className="bar"></div>
+        <div className="bar"></div>
+      </button>
 
       <main>
         <h1 className="title">🎬 Customize Your Movie Preferences</h1>
@@ -187,7 +313,6 @@ export default function Dashboard() {
                   className={`service-btn ${isSelected ? "selected" : ""}`}
                   style={{
                     backgroundColor: isSelected ? color : "#333",
-                    // pass glow color as CSS variable
                     "--glow-color": color,
                   } as React.CSSProperties}
                 >
@@ -196,12 +321,54 @@ export default function Dashboard() {
               );
             })}
           </div>
+          
         </div>
+
+        <div className="card">
+        <label>
+          <input
+            type="checkbox"
+            checked={showSecondUser}
+            onChange={(e) => setShowSecondUser(e.target.checked)}
+          />
+          &nbsp; Add preferences for a second user
+        </label>
+      </div>
+
+      {showSecondUser && (
+        <div className="card">
+          <h2 style={{ color: "#FF9800" }}>2nd User Genre Preferences</h2>
+          {genres.map((genre) => (
+            <div key={genre} className="genre-row">
+              <span>{genre}</span>
+              <select
+                value={genreRanks2[genre]}
+                onChange={(e) =>
+                  handleRankChange(genre, Number(e.target.value), 2)
+                }
+              >
+                {[1, 2, 3, 4, 5].map((val) => (
+                  <option key={val} value={val}>
+                    {val}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+      )}
+
 
         <button className="save-btn" onClick={handleSave}>
           Save Preferences
         </button>
+      
       </main>
+      {showProfile && (
+      <div className="profile-panel-wrapper">
+        <UserProfilePanel username="John Doe" avatarUrl="" onLogout={handleLogout} />
+      </div>
+    )}
     </>
   );
 }
