@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useEffect } from "react";
 import UserProfilePanel from "../components/profile";
 import { useRouter } from "next/navigation";
+import { parseJwt } from "./Parser";
 
 
 const genres = [
@@ -52,14 +53,21 @@ export default function Dashboard() {
 
   const [showProfile, setShowProfile] = useState(false);
 
+  const [userInfo, setUserInfo] = useState<{username: string; email?: string; avatarUrl?: string} | null>(null);
+
 
   useEffect(() => {
-    //TODO: remove this for production
     const token = localStorage.getItem("token");
-    console.log("Token on dashboard load:", token);
     if (!token) {
       router.push("/login");
     } else {
+      const payload = parseJwt(token);
+      if (payload && payload.sub) {
+        setUserInfo({
+          username: payload.sub,
+          email: payload.email || "",
+        });
+      }
       setIsHydrated(true);
     }
   }, [router]);
@@ -359,16 +367,21 @@ export default function Dashboard() {
       )}
 
 
-        <button className="save-btn" onClick={handleSave}>
+      <button className="save-btn" onClick={handleSave}>
           Save Preferences
         </button>
       
       </main>
       {showProfile && (
-      <div className="profile-panel-wrapper">
-        <UserProfilePanel username="John Doe" avatarUrl="" onLogout={handleLogout} />
-      </div>
-    )}
+        <UserProfilePanel
+          username={userInfo?.username || "Guest"}
+          email={userInfo?.email}
+          avatarUrl=""
+          onLogout={handleLogout}
+          onClose={() => setShowProfile(false)}
+        />
+      )}
+
     </>
   );
 }
