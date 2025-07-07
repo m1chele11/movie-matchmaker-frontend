@@ -25,6 +25,7 @@ const streamingServices = [
 ];
 
 export default function Dashboard() {
+
   const [genreRanks, setGenreRanks] = useState<Record<string, number>>(() =>
     genres.reduce((acc, genre) => {
       acc[genre] = 3;
@@ -32,6 +33,15 @@ export default function Dashboard() {
     }, {} as Record<string, number>)
   );
 
+  const [genreRanks2, setGenreRanks2] = useState<Record<string, number>>(() =>
+    genres.reduce((acc, genre) => {
+      acc[genre] = 3;
+      return acc;
+    }, {} as Record<string, number>)
+  );
+
+  const [showSecondUser, setShowSecondUser] = useState(false);
+  
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
 
   const [isHydrated, setIsHydrated] = useState(false);
@@ -40,8 +50,16 @@ export default function Dashboard() {
     setIsHydrated(true);
   }, []);
 
-  function handleRankChange(genre: string, value: number) {
-    setGenreRanks((prev) => ({ ...prev, [genre]: value }));
+  function handleRankChange(
+    genre: string,
+    value: number,
+    user: 1 | 2 = 1
+  ){
+    if (user === 1) {
+      setGenreRanks((prev) => ({ ...prev, [genre]: value }));
+    } else {
+      setGenreRanks2((prev) => ({ ...prev, [genre]: value }));
+    }
   }
 
   function toggleService(service: string) {
@@ -51,9 +69,16 @@ export default function Dashboard() {
   }
 
   function handleSave() {
+    const payload = {
+      user1Genres: genreRanks,
+      user2Genres: genreRanks2,
+      services: selectedServices,
+    };
     console.log("Genre Ranks:", genreRanks);
     console.log("Selected Services:", selectedServices);
     alert("Preferences saved (mock)!");
+     // TODO: Replace with actual POST request
+
   }
 
   if (!isHydrated) {
@@ -196,11 +221,49 @@ export default function Dashboard() {
               );
             })}
           </div>
+          
         </div>
+
+        <div className="card">
+        <label>
+          <input
+            type="checkbox"
+            checked={showSecondUser}
+            onChange={(e) => setShowSecondUser(e.target.checked)}
+          />
+          &nbsp; Add preferences for a second user
+        </label>
+      </div>
+
+      {showSecondUser && (
+        <div className="card">
+          <h2 style={{ color: "#FF9800" }}>2nd User Genre Preferences</h2>
+          {genres.map((genre) => (
+            <div key={genre} className="genre-row">
+              <span>{genre}</span>
+              <select
+                value={genreRanks2[genre]}
+                onChange={(e) =>
+                  handleRankChange(genre, Number(e.target.value), 2)
+                }
+              >
+                {[1, 2, 3, 4, 5].map((val) => (
+                  <option key={val} value={val}>
+                    {val}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+      )}
+
 
         <button className="save-btn" onClick={handleSave}>
           Save Preferences
         </button>
+        
+
       </main>
     </>
   );
