@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useEffect } from "react";
+import UserProfilePanel from "../components/profile";
+import { useRouter } from "next/navigation";
 
 
 const genres = [
@@ -26,6 +28,8 @@ const streamingServices = [
 
 export default function Dashboard() {
 
+  const router = useRouter();
+
   const [genreRanks, setGenreRanks] = useState<Record<string, number>>(() =>
     genres.reduce((acc, genre) => {
       acc[genre] = 3;
@@ -47,8 +51,15 @@ export default function Dashboard() {
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    setIsHydrated(true);
-  }, []);
+    //TODO: remove this for production
+    const token = localStorage.getItem("token");
+    console.log("Token on dashboard load:", token);
+    if (!token) {
+      router.push("/login");
+    } else {
+      setIsHydrated(true);
+    }
+  }, [router]);
 
   function handleRankChange(
     genre: string,
@@ -68,21 +79,44 @@ export default function Dashboard() {
     );
   }
 
-  function handleSave() {
+  async function handleSave() {
     const payload = {
       user1Genres: genreRanks,
       user2Genres: genreRanks2,
       services: selectedServices,
     };
-    console.log("Genre Ranks:", genreRanks);
-    console.log("Selected Services:", selectedServices);
-    alert("Preferences saved (mock)!");
-     // TODO: Replace with actual POST request
-
+  
+    try {
+      const response = await fetch("/api/preferences", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      alert("Preferences saved successfully!");
+      console.log("Response from server:", data);
+    } catch (error) {
+      console.error("Error saving preferences:", error);
+      alert("Failed to save preferences (mock)!");
+    }
   }
 
   if (!isHydrated) {
     return null;
+  }
+
+  function handleLogout() {
+    // Implement logout logic here: clear tokens, redirect, etc.
+    localStorage.removeItem("token");
+    router.push("/login");
+    alert("Logged out!");
   }
 
   return (
@@ -262,9 +296,14 @@ export default function Dashboard() {
         <button className="save-btn" onClick={handleSave}>
           Save Preferences
         </button>
-        
-
+      
       </main>
+
+      <UserProfilePanel
+        username="John Doe"
+        avatarUrl=""
+        onLogout={handleLogout}
+      />
     </>
   );
 }
