@@ -50,6 +50,9 @@ export default function Dashboard() {
 
   const [isHydrated, setIsHydrated] = useState(false);
 
+  const [showProfile, setShowProfile] = useState(false);
+
+
   useEffect(() => {
     //TODO: remove this for production
     const token = localStorage.getItem("token");
@@ -113,7 +116,7 @@ export default function Dashboard() {
   }
 
   function handleLogout() {
-    // Implement logout logic here: clear tokens, redirect, etc.
+    //TODO: Implement logout logic here: clear tokens, redirect, etc.
     localStorage.removeItem("token");
     router.push("/login");
     alert("Logged out!");
@@ -210,7 +213,71 @@ export default function Dashboard() {
         .save-btn:hover {
           background-color: #e6b007;
         }
+        .hamburger-btn {
+          position: fixed;
+          top: 1.5rem;
+          right: 1.5rem;
+          background: rgba(255, 255, 255, 0.08);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 12px;
+          padding: 0.6rem;
+          z-index: 1000;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: flex;
+          flex-direction: column;
+          gap: 0.35rem;
+        }
+
+        .hamburger-btn:hover {
+          box-shadow: 0 0 8px 2px rgba(255, 193, 7, 0.6);
+        }
+
+        .bar {
+          width: 24px;
+          height: 3px;
+          background-color: #ffc107;
+          border-radius: 3px;
+        }
+        .profile-panel-wrapper {
+          position: fixed;
+          top: 0;
+          right: 0;
+          height: 100vh;
+          width: 280px;
+          background: rgba(18, 18, 18, 0.95);
+          backdrop-filter: blur(12px);
+          border-left: 1px solid rgba(255, 255, 255, 0.1);
+          padding: 1.5rem;
+          box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
+          z-index: 999;
+          animation: slideIn 0.3s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+
+
       `}</style>
+
+      <button
+        className="hamburger-btn"
+        onClick={() => setShowProfile(!showProfile)}
+        aria-label="Toggle profile panel"
+      >
+        <div className="bar"></div>
+        <div className="bar"></div>
+        <div className="bar"></div>
+      </button>
 
       <main>
         <h1 className="title">🎬 Customize Your Movie Preferences</h1>
@@ -246,7 +313,6 @@ export default function Dashboard() {
                   className={`service-btn ${isSelected ? "selected" : ""}`}
                   style={{
                     backgroundColor: isSelected ? color : "#333",
-                    // pass glow color as CSS variable
                     "--glow-color": color,
                   } as React.CSSProperties}
                 >
@@ -298,12 +364,11 @@ export default function Dashboard() {
         </button>
       
       </main>
-
-      <UserProfilePanel
-        username="John Doe"
-        avatarUrl=""
-        onLogout={handleLogout}
-      />
+      {showProfile && (
+      <div className="profile-panel-wrapper">
+        <UserProfilePanel username="John Doe" avatarUrl="" onLogout={handleLogout} />
+      </div>
+    )}
     </>
   );
 }
