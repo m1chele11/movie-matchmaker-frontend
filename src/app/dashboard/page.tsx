@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useEffect } from "react";
+
 
 const genres = [
   "Action",
@@ -12,6 +14,7 @@ const genres = [
   "Thriller",
   "Fantasy",
 ];
+
 
 const streamingServices = [
   { name: "Netflix", color: "#E50914" },
@@ -31,6 +34,12 @@ export default function Dashboard() {
 
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
 
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
   function handleRankChange(genre: string, value: number) {
     setGenreRanks((prev) => ({ ...prev, [genre]: value }));
   }
@@ -45,6 +54,10 @@ export default function Dashboard() {
     console.log("Genre Ranks:", genreRanks);
     console.log("Selected Services:", selectedServices);
     alert("Preferences saved (mock)!");
+  }
+
+  if (!isHydrated) {
+    return null;
   }
 
   return (
