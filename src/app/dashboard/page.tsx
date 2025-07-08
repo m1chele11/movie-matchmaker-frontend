@@ -62,6 +62,7 @@ export default function Dashboard() {
       router.push("/login");
     } else {
       const payload = parseJwt(token);
+      console.log("Decoded JWT payload:", payload); 
       if (payload && payload.sub) {
         setUserInfo({
           username: payload.sub,
