@@ -94,11 +94,18 @@ export default function Dashboard() {
   }
 
   async function handleSave() {
-    const payload = {
+    const payload: {
+      user1Genres: Record<string, number>;
+      services: string[];
+      user2Genres?: Record<string, number>;
+    } = {
       user1Genres: genreRanks,
-      user2Genres: genreRanks2,
       services: selectedServices,
     };
+
+    if (showSecondUser) {
+      payload.user2Genres = genreRanks2;
+    }
   
     try {
       const response = await fetch("http://localhost:8080/api/preferences", {
