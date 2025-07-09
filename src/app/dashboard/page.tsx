@@ -54,6 +54,7 @@ export default function Dashboard() {
   const [showProfile, setShowProfile] = useState(false);
 
   const [userInfo, setUserInfo] = useState<{username: string; email?: string; avatarUrl?: string} | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -69,6 +70,7 @@ export default function Dashboard() {
           email: payload.email || "",
         });
       }
+      setToken(token);
       setIsHydrated(true);
     }
   }, [router]);
@@ -99,11 +101,13 @@ export default function Dashboard() {
     };
   
     try {
-      const response = await fetch("/api/preferences", {
+      const response = await fetch("http://localhost:8080/api/preferences", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
   
