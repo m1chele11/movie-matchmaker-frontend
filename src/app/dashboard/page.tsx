@@ -54,6 +54,7 @@ export default function Dashboard() {
   const [showProfile, setShowProfile] = useState(false);
 
   const [userInfo, setUserInfo] = useState<{username: string; email?: string; avatarUrl?: string} | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -69,6 +70,7 @@ export default function Dashboard() {
           email: payload.email || "",
         });
       }
+      setToken(token);
       setIsHydrated(true);
     }
   }, [router]);
@@ -92,18 +94,27 @@ export default function Dashboard() {
   }
 
   async function handleSave() {
-    const payload = {
+    const payload: {
+      user1Genres: Record<string, number>;
+      services: string[];
+      user2Genres?: Record<string, number>;
+    } = {
       user1Genres: genreRanks,
-      user2Genres: genreRanks2,
       services: selectedServices,
     };
+
+    if (showSecondUser) {
+      payload.user2Genres = genreRanks2;
+    }
   
     try {
-      const response = await fetch("/api/preferences", {
+      const response = await fetch("http://localhost:8080/api/preferences", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
   
