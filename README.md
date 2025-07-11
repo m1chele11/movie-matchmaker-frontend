@@ -1,6 +1,67 @@
+# Movie Matchmaker – Frontend (Next.js)
+
+This is the frontend of the **Movie Matchmaker** web application, a personalized movie recommendation platform that matches one or two users based on their ranked genre preferences and selected streaming services. Built with **React and Next.js**, the app will deliver a clean and interactive UI optimized for both desktop and mobile devices.
+
+---
+
+## 🔍 Overview
+
+Movie Matchmaker allows users to:
+- Log in securely via JWT-authenticated sessions
+- Select and rank their favorite movie genres
+- Choose available streaming platforms (e.g., Netflix, Hulu)
+- View personalized movie recommendations in real-time
+- Save match history and revisit past results
+
+---
+
+## ✅ Key Features
+
+- **Secure User Authentication** with JWT + BCrypt (via backend)
+- **Dual-User Preference Input** form (genre ranking, service selection)
+- **Live Recommendation Feed** powered by the Flask ML microservice
+- **Saved Match History Panel** for user retrospection
+- **Responsive UI** with modern design and accessibility support
+
+---
+
+## 🛠️ Tech Stack
+
+- **Next.js** (React Framework)
+- **Tailwind CSS** (UI Styling)
+- **Axios** (API Communication)
+- **JWT Auth Integration** (via Spring Boot backend)
+- **Framer Motion** (for animation and interactivity)
+
+---
+
+## 🚧 Future Plans
+
+- Add login/registration screens
+- Implement form validation and animated progress
+- Display enriched movie data (poster, overview, platforms)
+- Offline mode and persistent local history
+- Dark mode support
+
+---
+
+## 📦 Getting Started
+
+```bash
+git clone https://github.com/your-username/movie-matchmaker-frontend.git
+cd movie-matchmaker-frontend
+npm install
+npm run dev
+
+
+
+
+
+
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+## Default getting started 
 
 First, run the development server:
 
