@@ -23,9 +23,13 @@ export default function MovieRecs({ title }: { title: string }) {
   useEffect(() => {
     async function fetchRecommendations() {
       try {
-        const res = await fetch(
-          `/api/recommendations/enhanced?title=${encodeURIComponent(title)}`
-        );
+        const token = localStorage.getItem("token");
+        const res = await fetch(`http://localhost:8080/api/recommendations/enhanced?title=${encodeURIComponent(title)}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,  // <--- include this header
+            'Content-Type': 'application/json'
+        }
+        });
         if (!res.ok) throw new Error("Failed to fetch recommendations");
         const data = await res.json();
         setRecommendations(data.recommendations);
