@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import UserProfilePanel from "../components/profile";
 import { useRouter } from "next/navigation";
 import { parseJwt } from "./Parser";
-import MovieRecs from "../components/MovieRecs";
+import MovieRecommendationWindow from "../components/MovieRecommendationWindow";
 
 const genres = [
   "Action",
@@ -25,6 +25,20 @@ const streamingServices = [
   { name: "Disney+", color: "#00A8E1" },
   { name: "HBO Max", color: "#5B3994" },
 ];
+
+// Define the Recommendation type
+type Recommendation = {
+  title: string;
+  overview: string;
+  popularity: number;
+  similarity: number;
+  voteAverage: number;
+  posterUrl: string;
+  streamingPlatforms: string[];
+  releaseYear: number;
+  imdbId: string;
+  genres: string[];
+};
 
 export default function Dashboard() {
   const router = useRouter();
@@ -52,8 +66,9 @@ export default function Dashboard() {
   const [titleInput, setTitleInput] = useState("");
   const [searchedTitle, setSearchedTitle] = useState("");
   const [activeTab, setActiveTab] = useState<"preferences" | "title">("preferences");
-
-
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -121,7 +136,53 @@ export default function Dashboard() {
       console.log("Response from server:", data);
     } catch (error) {
       console.error("Error saving preferences:", error);
-      alert("Failed to save preferences (mock)!");
+      alert("Failed to save preferences. Please try again.");
+    }
+  }
+
+  async function handleGetRecommendations() {
+    if (!titleInput.trim()) {
+      alert("Please enter a movie title");
+      return;
+    }
+
+    setLoadingRecommendations(true);
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/recommendations/enhanced?title=${encodeURIComponent(titleInput.trim())}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Recommendations response:", data);
+      
+      // Handle different possible response structures
+      let recommendationsData: Recommendation[] = [];
+      if (data.recommendations && Array.isArray(data.recommendations)) {
+        recommendationsData = data.recommendations;
+      } else if (Array.isArray(data)) {
+        recommendationsData = data;
+      } else {
+        console.warn("Unexpected response structure:", data);
+      }
+
+      setRecommendations(recommendationsData);
+      setSearchedTitle(titleInput.trim());
+      setShowRecommendations(true);
+    } catch (error) {
+      console.error("Error fetching recommendations:", error);
+      alert("Failed to fetch recommendations. Please try again.");
+    } finally {
+      setLoadingRecommendations(false);
     }
   }
 
@@ -289,6 +350,11 @@ export default function Dashboard() {
           background-color: #e6b007;
         }
 
+        .save-btn:disabled {
+          background-color: #666;
+          cursor: not-allowed;
+        }
+
         .hamburger-btn {
           position: fixed;
           top: 1.5rem;
@@ -437,13 +503,19 @@ export default function Dashboard() {
                   value={titleInput}
                   onChange={(e) => setTitleInput(e.target.value)}
                   placeholder="Enter a movie title to get similar recommendations..."
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleGetRecommendations();
+                    }
+                  }}
                 />
                 <button 
-                  onClick={() => setSearchedTitle(titleInput)} 
+                  onClick={handleGetRecommendations} 
                   className="save-btn"
                   style={{ margin: "0 auto", display: "block" }}
+                  disabled={loadingRecommendations || !titleInput.trim()}
                 >
-                  Get Recommendations
+                  {loadingRecommendations ? "Loading..." : "Get Recommendations"}
                 </button>
               </div>
             )}
@@ -491,8 +563,13 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Movie Recommendations */}
-      {searchedTitle && <MovieRecs title={searchedTitle} />}
+      {/* Movie Recommendations Window */}
+      <MovieRecommendationWindow
+        recommendations={recommendations}
+        isOpen={showRecommendations}
+        onClose={() => setShowRecommendations(false)}
+        searchedTitle={searchedTitle}
+      />
     </>
   );
 }
