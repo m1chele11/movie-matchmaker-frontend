@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import UserProfilePanel from "../components/profile";
 import { useRouter } from "next/navigation";
 import { parseJwt } from "./Parser";
-
+import MovieRecs from "../components/MovieRecs";
 
 const genres = [
   "Action",
@@ -18,7 +18,6 @@ const genres = [
   "Fantasy",
 ];
 
-
 const streamingServices = [
   { name: "Netflix", color: "#E50914" },
   { name: "Hulu", color: "#1CE783" },
@@ -28,7 +27,6 @@ const streamingServices = [
 ];
 
 export default function Dashboard() {
-
   const router = useRouter();
 
   const [genreRanks, setGenreRanks] = useState<Record<string, number>>(() =>
@@ -46,16 +44,14 @@ export default function Dashboard() {
   );
 
   const [showSecondUser, setShowSecondUser] = useState(false);
-  
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
-
   const [isHydrated, setIsHydrated] = useState(false);
-
   const [showProfile, setShowProfile] = useState(false);
-
   const [userInfo, setUserInfo] = useState<{username: string; email?: string; avatarUrl?: string} | null>(null);
   const [token, setToken] = useState<string | null>(null);
-
+  const [titleInput, setTitleInput] = useState("");
+  const [searchedTitle, setSearchedTitle] = useState("");
+  const [activeTab, setActiveTab] = useState<"preferences" | "title">("preferences");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -75,11 +71,7 @@ export default function Dashboard() {
     }
   }, [router]);
 
-  function handleRankChange(
-    genre: string,
-    value: number,
-    user: 1 | 2 = 1
-  ){
+  function handleRankChange(genre: string, value: number, user: 1 | 2 = 1) {
     if (user === 1) {
       setGenreRanks((prev) => ({ ...prev, [genre]: value }));
     } else {
@@ -136,7 +128,6 @@ export default function Dashboard() {
   }
 
   function handleLogout() {
-    //TODO: Implement logout logic here: clear tokens, redirect, etc.
     localStorage.removeItem("token");
     router.push("/login");
     alert("Logged out!");
@@ -177,6 +168,51 @@ export default function Dashboard() {
           color: #e50914;
         }
 
+        .tab-container {
+          max-width: 720px;
+          margin: 1rem auto;
+        }
+
+        .tab-buttons {
+          display: flex;
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(12px);
+          border-radius: 16px 16px 0 0;
+          overflow: hidden;
+          box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .tab-button {
+          flex: 1;
+          padding: 1rem 2rem;
+          background: transparent;
+          border: none;
+          color: #f5f5f5;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          border-bottom: 3px solid transparent;
+        }
+
+        .tab-button:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tab-button.active {
+          color: #ffc107;
+          border-bottom-color: #ffc107;
+          background: rgba(255, 193, 7, 0.1);
+        }
+
+        .tab-content {
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(12px);
+          border-radius: 0 0 16px 16px;
+          padding: 2rem;
+          box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
         .genre-row {
           display: flex;
           justify-content: space-between;
@@ -190,6 +226,23 @@ export default function Dashboard() {
           border: 1px solid #444;
           border-radius: 6px;
           padding: 0.4rem 0.6rem;
+        }
+
+        .title-input {
+          width: 100%;
+          padding: 0.75rem;
+          background-color: #1f1f1f;
+          color: #f5f5f5;
+          border: 1px solid #444;
+          border-radius: 8px;
+          font-size: 1rem;
+          margin-bottom: 1rem;
+        }
+
+        .title-input:focus {
+          outline: none;
+          border-color: #ffc107;
+          box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.2);
         }
 
         .services {
@@ -233,6 +286,7 @@ export default function Dashboard() {
         .save-btn:hover {
           background-color: #e6b007;
         }
+
         .hamburger-btn {
           position: fixed;
           top: 1.5rem;
@@ -260,6 +314,7 @@ export default function Dashboard() {
           background-color: #ffc107;
           border-radius: 3px;
         }
+
         .profile-panel-wrapper {
           position: fixed;
           top: 0;
@@ -285,8 +340,6 @@ export default function Dashboard() {
             opacity: 1;
           }
         }
-
-
       `}</style>
 
       <button
@@ -302,25 +355,100 @@ export default function Dashboard() {
       <main>
         <h1 className="title">🎬 Customize Your Movie Preferences</h1>
 
-        <div className="card">
-          <h2>Rank Your Favorite Genres</h2>
-          {genres.map((genre) => (
-            <div key={genre} className="genre-row">
-              <span>{genre}</span>
-              <select
-                value={genreRanks[genre]}
-                onChange={(e) => handleRankChange(genre, Number(e.target.value))}
-              >
-                {[1, 2, 3, 4, 5].map((val) => (
-                  <option key={val} value={val}>
-                    {val}
-                  </option>
+        {/* Tab Container */}
+        <div className="tab-container">
+          <div className="tab-buttons">
+            <button
+              className={`tab-button ${activeTab === "preferences" ? "active" : ""}`}
+              onClick={() => setActiveTab("preferences")}
+            >
+              Genre Preferences
+            </button>
+            <button
+              className={`tab-button ${activeTab === "title" ? "active" : ""}`}
+              onClick={() => setActiveTab("title")}
+            >
+              Movie Title Search
+            </button>
+          </div>
+
+          <div className="tab-content">
+            {activeTab === "preferences" ? (
+              <div>
+                <h2>Rank Your Favorite Genres</h2>
+                {genres.map((genre) => (
+                  <div key={genre} className="genre-row">
+                    <span>{genre}</span>
+                    <select
+                      value={genreRanks[genre]}
+                      onChange={(e) => handleRankChange(genre, Number(e.target.value))}
+                    >
+                      {[1, 2, 3, 4, 5].map((val) => (
+                        <option key={val} value={val}>
+                          {val}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 ))}
-              </select>
-            </div>
-          ))}
+
+                <div style={{ marginTop: "2rem" }}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={showSecondUser}
+                      onChange={(e) => setShowSecondUser(e.target.checked)}
+                    />
+                    &nbsp; Add preferences for a second user
+                  </label>
+                </div>
+
+                {showSecondUser && (
+                  <div style={{ marginTop: "2rem" }}>
+                    <h2 style={{ color: "#FF9800" }}>2nd User Genre Preferences</h2>
+                    {genres.map((genre) => (
+                      <div key={genre} className="genre-row">
+                        <span>{genre}</span>
+                        <select
+                          value={genreRanks2[genre]}
+                          onChange={(e) =>
+                            handleRankChange(genre, Number(e.target.value), 2)
+                          }
+                        >
+                          {[1, 2, 3, 4, 5].map((val) => (
+                            <option key={val} value={val}>
+                              {val}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>
+                <h2>Get Recommendations by Movie Title</h2>
+                <input
+                  type="text"
+                  className="title-input"
+                  value={titleInput}
+                  onChange={(e) => setTitleInput(e.target.value)}
+                  placeholder="Enter a movie title to get similar recommendations..."
+                />
+                <button 
+                  onClick={() => setSearchedTitle(titleInput)} 
+                  className="save-btn"
+                  style={{ margin: "0 auto", display: "block" }}
+                >
+                  Get Recommendations
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
+        {/* Streaming Services - Always visible below tabs */}
         <div className="card">
           <h2 style={{ color: "#007BFF" }}>Select Streaming Services</h2>
           <div className="services">
@@ -341,49 +469,16 @@ export default function Dashboard() {
               );
             })}
           </div>
-          
         </div>
 
-        <div className="card">
-        <label>
-          <input
-            type="checkbox"
-            checked={showSecondUser}
-            onChange={(e) => setShowSecondUser(e.target.checked)}
-          />
-          &nbsp; Add preferences for a second user
-        </label>
-      </div>
-
-      {showSecondUser && (
-        <div className="card">
-          <h2 style={{ color: "#FF9800" }}>2nd User Genre Preferences</h2>
-          {genres.map((genre) => (
-            <div key={genre} className="genre-row">
-              <span>{genre}</span>
-              <select
-                value={genreRanks2[genre]}
-                onChange={(e) =>
-                  handleRankChange(genre, Number(e.target.value), 2)
-                }
-              >
-                {[1, 2, 3, 4, 5].map((val) => (
-                  <option key={val} value={val}>
-                    {val}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
-        </div>
-      )}
-
-
-      <button className="save-btn" onClick={handleSave}>
-          Save Preferences
-        </button>
-      
+        {/* Save Button - Only show for preferences tab */}
+        {activeTab === "preferences" && (
+          <button className="save-btn" onClick={handleSave}>
+            Save Preferences
+          </button>
+        )}
       </main>
+
       {showProfile && (
         <UserProfilePanel
           username={userInfo?.username || "Guest"}
@@ -394,6 +489,8 @@ export default function Dashboard() {
         />
       )}
 
+      {/* Movie Recommendations */}
+      {searchedTitle && <MovieRecs title={searchedTitle} />}
     </>
   );
 }
